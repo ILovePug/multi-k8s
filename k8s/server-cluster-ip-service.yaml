@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service #type of object we want to make inside the k8s cluster. service is used to set up networking inside the k8s cluster
+metadata:
+  name: server-cluster-ip-service
+spec:
+  # 4 types: ClusterIP, NodePort, LoadBalancer, Ingress
+  # NodePort exposes the container to the outside world, only good for dev
+  # ClusterIP exposes the container only to the other objects inside the node
+  type: ClusterIP 
+  ports: 
+    - port: 5000 #the port of other pod that need to access the target pod
+      targetPort: 5000 # the port of the target pod. send all traffic to the pod through port 3000
+  selector: #label selector. used to point to the correct container by label
+    component: server #find the object within the same node that has component:server attributes

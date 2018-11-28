@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim #k8s allocate persistent volume for the sepcficied access mode and storage space
+metadata:
+  name: database-persistent-volume-claim
+spec:
+  accessModes:
+    #3 types: ReadWriteOnce, ReadOnlyMany, ReadWriteMany
+    #ReadWriteOnce can be used by a single node
+    #ReadOnlyMany read only by many nodes
+    #ReadWriteMany read and write by many nodes
+    - ReadWriteOnce 
+  resources:
+    requests:
+      storage: 2Gi
