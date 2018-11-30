@@ -1,0 +1,20 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: hehoshi-com-tls
+spec:
+  secretName: hehoshi-com
+  issuerRef: 
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: hehoshi.com # apply to what domain
+  dnsNames: # all domain names should be associated with this certificate
+    - hehoshi.com
+    - www.hehoshi.com
+  acme:
+    config:
+      - http01:
+          ingressClass: nginx
+        domains:
+          - hehoshi.com
+          - www.hehoshi.com
