@@ -13,6 +13,6 @@ docker push qianweng/multi-worker:$SHA
 
 #apply all the config file and auto ignore all unchanged file
 kubectl apply -f k8s
-kubectl set image deployments/client-deployment server=qianweng/multi-client:$SHA
-kubectl set image deployments/worker-deployment server=qianweng/multi-worker:$SHA
+kubectl set image deployments/client-deployment client=qianweng/multi-client:$SHA
+kubectl set image deployments/worker-deployment worker=qianweng/multi-worker:$SHA
 kubectl set image deployments/server-deployment server=qianweng/multi-server:$SHA
