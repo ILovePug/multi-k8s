@@ -1,15 +1,58 @@
+#!!manually run all gcloud 1,2,3 command on google cloud shell (web) whenever a new k8s cluster get setup
+#!!and gcloud environment variable by run: kubectl create secret generic pgpassword --from-literal PGPASSWORD=<anything>
+#!!and install Helm (package manager for k8s) by visit : https://docs.helm.sh/using_helm/#installing-helm 
+#  Helm client: scroll to 'From Script' section
+#    1: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get > get_helm.sh
+#    2: chmod 700 get_helm.sh
+#    3: ./get_helm.sh
+#  create a new service acocunt for Helm so it has permission to make change to our cluster
+#    create a new service account called tiller in the kube-system namespace
+#    1.  kubectl create serviceaccount --namespace kube-system tiller
+#    create a new clusterrolebinding with the role 'cluster-admin' and assign it to service account 'tiller'
+#    2.  kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+#  Helm server (Tiller): scroll to GKE section
+#    init and upgrade to the latest version
+#    1.  helm init --service-account tiller --upgrade
+#!!now install ingressNGINX using Heml https://kubernetes.github.io/ingress-nginx/deploy/#using-helm
+# ingressNginx will be able to consume our k8s file for ingress-serivce
+#    1.  helm install stable/nginx-ingress --name my-nginx --set rbac.create=true
+
 sudo: required
 services: 
   - docker
+env:
+  global:
+    #set latest git commit unique ID to variable SHA
+    - SHA=$(git rev-parse HEAD)
+    #stop cloud CLI from displaying any prompts because at CI we have no way to respond
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
 before_install: 
-  #travis encryption afterward instruction
+  #travis encryption afterward instruction. it encrypted google cloud service account file and set it up in travis ci
   - openssl aes-256-cbc -K $encrypted_0c35eebf403c_key -iv $encrypted_0c35eebf403c_iv -in service-account.json.enc -out service-account.json -d
   #download google sdk and install it locally in travis ci
   - curl https://sdk.cloud.google.com | bash > /dev/null;
   - source $HOME/google-cloud-sdk/path.bash.inc
   #setup kubectl in travis ci environment
   - gcloud components update kubectl
+  #at this moment, travis ci has already decrpted the service-account.json file and google cloud can get the service account in from it for authenication
   #authentication with google cloud service account (same as AWS IAM)
   - gcloud auth activate-service-account --key-file service-account.json
+  # 1.tell GC which project to use (use the project ID)
+  - gcloud config set project multi-k8s-224009
+  # 2.tell GC which zone (use the cluster zone)
+  - gcloud config set compute/zone us-east4-b
+  # 3.tell GC which cluster (use name of the cluster)
+  - gcloud container clusters get-credentials multi-cluster	
+  # login to docker by using th env variables stored in travis ci
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  # build the test from dev version docker
+  - docker build -t qianweng/react-test -f ./client/Dockerfile.dev ./client
 
+script:
+  - docker run qianweng/react-test npm run test --coverage
 
+deploy:
+  provider: script
+  script: bash ./deploy.sh
+  on:
+    branch: master
